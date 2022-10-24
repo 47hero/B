@@ -1,5 +1,14 @@
 package com.example.myuitest.practice;
 
+import android.os.Build;
+
+import androidx.annotation.RequiresApi;
+
+import java.text.SimpleDateFormat;
+import java.util.Random;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+
 public class ThreadTest {
 
     /**
@@ -168,6 +177,87 @@ public class ThreadTest {
                     }
                 }
             }, "线程 2").start();
+        }
+    }
+
+    /**
+     * 双重校验锁实现对象单例（线程安全）
+     */
+    public class Singleton {
+
+        private volatile Singleton uniqueInstance;
+
+        private Singleton() {
+        }
+
+        public  Singleton getUniqueInstance() {
+            //先判断对象是否已经实例过，没有实例化过才进入加锁代码
+            if (uniqueInstance == null) {
+                //类对象加锁
+                synchronized (Singleton.class) {
+                    if (uniqueInstance == null) {
+                        uniqueInstance = new Singleton();
+                    }
+                }
+            }
+            return uniqueInstance;
+        }
+    }
+
+    /**
+     * volatile 关键字能保证变量的可见性，但不能保证对变量的操作是原子性的。
+     */
+    public class VolatoleAtomicityDemo {
+        public volatile int inc = 0;
+
+        public void increase() {
+            inc++;
+        }
+
+        public void main(String[] args) throws InterruptedException {
+            ExecutorService threadPool = Executors.newFixedThreadPool(5);
+            VolatoleAtomicityDemo volatoleAtomicityDemo = new VolatoleAtomicityDemo();
+            for (int i = 0; i < 5; i++) {
+                threadPool.execute(() -> {
+                    for (int j = 0; j < 500; j++) {
+                        volatoleAtomicityDemo.increase();
+                    }
+                });
+            }
+            // 等待1.5秒，保证上面程序执行完成
+            Thread.sleep(1500);
+            System.out.println(inc);
+            threadPool.shutdown();
+        }
+    }
+
+    @RequiresApi(api = Build.VERSION_CODES.O)
+    public class ThreadLocalExample implements Runnable {
+
+        // SimpleDateFormat 不是线程安全的，所以每个线程都要有自己独立的副本
+        private final ThreadLocal<SimpleDateFormat> formatter = ThreadLocal.withInitial(() -> new SimpleDateFormat("yyyyMMdd HHmm"));
+
+        public void main(String[] args) throws InterruptedException {
+            ThreadLocalExample obj = new ThreadLocalExample();
+            for (int i = 0; i < 10; i++) {
+                Thread t = new Thread(obj, "" + i);
+                Thread.sleep(new Random().nextInt(1000));
+                t.start();
+            }
+        }
+
+        @Override
+        public void run() {
+            System.out.println("Thread Name= " + Thread.currentThread().getName() + " default Formatter = " + formatter.get().toPattern());
+            try {
+                Thread.sleep(new Random().nextInt(1000));
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+            //formatter pattern is changed here by thread, but it won't reflect to other threads
+            formatter.set(new SimpleDateFormat());
+
+            System.out.println("Thread Name= " + Thread.currentThread().getName() + " formatter = " + formatter.get().toPattern());
         }
     }
 }
