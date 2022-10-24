@@ -74,4 +74,100 @@ public class ThreadTest {
      *
      * 线程在生命周期中并不是固定处于某一个状态而是随着代码的执行在不同状态之间切换。
      */
+
+    /**
+     * 什么是上下文切换?
+     *
+     * 线程在执行过程中会有自己的运行条件和状态（也称上下文），比如上文所说到过的程序计数器，栈信息等。当出现如下情况的时候，线程会从占用 CPU 状态中退出。
+     *
+     * 主动让出 CPU，比如调用了 sleep(), wait() 等。
+     * 时间片用完，因为操作系统要防止一个线程或者进程长时间占用 CPU 导致其他线程或者进程饿死。
+     * 调用了阻塞类型的系统中断，比如请求 IO，线程被阻塞。
+     * 被终止或结束运行
+     *
+     * 这其中前三种都会发生线程切换，线程切换意味着需要保存当前线程的上下文，留待线程下次占用 CPU 的时候恢复现场。并加载下一个将要占用 CPU 的线程上下文。这就是所谓的 上下文切换。
+     *
+     * 上下文切换是现代操作系统的基本功能，因其每次需要保存信息恢复信息，这将会占用 CPU，内存等系统资源进行处理，也就意味着效率会有一定损耗，如果频繁切换就会造成整体效率低下。
+     *
+     */
+
+    /**
+     * 死锁
+     */
+    public class DeadLockDemo {
+        private Object resource1 = new Object();//资源 1
+        private Object resource2 = new Object();//资源 2
+
+        public void main(String[] args) {
+            new Thread(() -> {
+                synchronized (resource1) {
+                    System.out.println(Thread.currentThread() + "get resource1");
+                    try {
+                        Thread.sleep(1000);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                    System.out.println(Thread.currentThread() + "waiting get resource2");
+                    synchronized (resource2) {
+                        System.out.println(Thread.currentThread() + "get resource2");
+                    }
+                }
+            }, "线程 1").start();
+
+            new Thread(() -> {
+                synchronized (resource2) {
+                    System.out.println(Thread.currentThread() + "get resource2");
+                    try {
+                        Thread.sleep(1000);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                    System.out.println(Thread.currentThread() + "waiting get resource1");
+                    synchronized (resource1) {
+                        System.out.println(Thread.currentThread() + "get resource1");
+                    }
+                }
+            }, "线程 2").start();
+        }
+    }
+
+    /**
+     * 避免死锁
+     */
+    public class DeadLockDemo2 {
+        private  Object resource1 = new Object();//资源 1
+        private  Object resource2 = new Object();//资源 2
+
+        public  void main(String[] args) {
+            new Thread(() -> {
+                synchronized (resource1) {
+                    System.out.println(Thread.currentThread() + "get resource1");
+                    try {
+                        Thread.sleep(1000);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                    System.out.println(Thread.currentThread() + "waiting get resource2");
+                    synchronized (resource2) {
+                        System.out.println(Thread.currentThread() + "get resource2");
+                    }
+                }
+            }, "线程 1").start();
+
+            new Thread(() -> {
+                synchronized (resource1) {
+                    System.out.println(Thread.currentThread() + "get resource1");
+                    try {
+                        Thread.sleep(1000);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                    System.out.println(Thread.currentThread() + "waiting get resource2");
+                    synchronized (resource2) {
+                        System.out.println(Thread.currentThread() + "get resource2");
+                    }
+                }
+            }, "线程 2").start();
+        }
+    }
 }
